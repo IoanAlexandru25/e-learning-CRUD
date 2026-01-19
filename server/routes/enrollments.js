@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const enrollmentsController = require('../controllers/enrollmentsController');
+const { verifyAuth } = require('../middleware/auth');
 
-// TODO: Adăugare middleware de autentificare în Commit 6
-router.post('/', enrollmentsController.enrollInCourse);
-router.get('/student/:studentId', enrollmentsController.getStudentEnrollments);
-router.get('/course/:courseId', enrollmentsController.getCourseEnrollments);
-router.delete('/:enrollmentId', enrollmentsController.unenrollFromCourse);
-
-router.put('/:enrollmentId/progress', enrollmentsController.updateProgress);
+router.post('/', verifyAuth, enrollmentsController.enrollInCourse);
+router.get('/student/:studentId', verifyAuth, enrollmentsController.getStudentEnrollments);
+router.get('/course/:courseId', verifyAuth, enrollmentsController.getCourseEnrollments);
+router.delete('/:enrollmentId', verifyAuth, enrollmentsController.unenrollFromCourse);
+router.put('/:enrollmentId/progress', verifyAuth, enrollmentsController.updateProgress);
 
 module.exports = router;

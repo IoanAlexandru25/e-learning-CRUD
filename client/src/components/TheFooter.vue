@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-  <v-footer color="secondary" app>
+  <v-footer color="secondary">
     <v-container>
       <v-row justify="center" align="center">
         <v-col cols="12" class="text-center">

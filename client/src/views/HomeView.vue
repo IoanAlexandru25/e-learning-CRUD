@@ -1,48 +1,38 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import CourseCard from '../components/CourseCard.vue'
 
-const featuredCourses = [
-  {
-    id: 1,
-    title: 'Complete Vue 3 Masterclass',
-    price: 89.99,
-    description: 'Master Vue 3 from basics to advanced concepts including Composition API, Pinia, and Vue Router.',
-    image: 'https://picsum.photos/400/250?random=1',
-    instructor: { name: 'Sarah Johnson' },
-    metadata: { avgRating: 4.8, enrollments: 340, views: 1250 },
-    specifications: { level: 'Intermediate', duration: '8 hours' }
-  },
-  {
-    id: 2,
-    title: 'Advanced JavaScript & ES6+',
-    price: 79.99,
-    description: 'Deep dive into modern JavaScript features, async programming, and best practices.',
-    image: 'https://picsum.photos/400/250?random=2',
-    instructor: { name: 'Michael Chen' },
-    metadata: { avgRating: 4.7, enrollments: 280, views: 950 },
-    specifications: { level: 'Advanced', duration: '6 hours' }
-  },
-  {
-    id: 3,
-    title: 'Full Stack Web Development',
-    price: 129.99,
-    description: 'Build complete web applications with Node.js, Express, MongoDB, and Vue.js.',
-    image: 'https://picsum.photos/400/250?random=3',
-    instructor: { name: 'Emily Davis' },
-    metadata: { avgRating: 4.9, enrollments: 520, views: 1800, featured: true },
-    specifications: { level: 'Intermediate', duration: '12 hours' }
-  },
-  {
-    id: 4,
-    title: 'Firebase & Firestore Guide',
-    price: 69.99,
-    description: 'Learn to build real-time applications with Firebase Authentication and Firestore database.',
-    image: 'https://picsum.photos/400/250?random=4',
-    instructor: { name: 'David Martinez' },
-    metadata: { avgRating: 4.6, enrollments: 190, views: 780 },
-    specifications: { level: 'Beginner', duration: '5 hours' }
+const featuredCourses = ref([])
+const loading = ref(false)
+
+onMounted(async () => {
+  await fetchFeaturedCourses()
+})
+
+const fetchFeaturedCourses = async () => {
+  loading.value = true
+  try {
+    const response = await fetch('http://localhost:3000/api/courses')
+    if (response.ok) {
+      const allCourses = await response.json()
+      const sortedCourses = allCourses.sort((a, b) => {
+
+        if (a.metadata?.featured && !b.metadata?.featured) return -1
+        if (!a.metadata?.featured && b.metadata?.featured) return 1
+
+        const ratingDiff = (b.metadata?.avgRating || 0) - (a.metadata?.avgRating || 0)
+        if (ratingDiff !== 0) return ratingDiff
+
+        return (b.metadata?.enrollments || 0) - (a.metadata?.enrollments || 0)
+      })
+      featuredCourses.value = sortedCourses.slice(0, 8)
+    }
+  } catch (error) {
+    console.error('Error fetching featured courses:', error)
+  } finally {
+    loading.value = false
   }
-]
+}
 </script>
 
 <template>
@@ -80,7 +70,18 @@ const featuredCourses = [
       </v-col>
     </v-row>
 
-    <v-row>
+    <v-row v-if="loading" class="mt-8">
+      <v-col cols="12" class="text-center">
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          size="64"
+        ></v-progress-circular>
+        <p class="text-h6 mt-4">Loading featured courses...</p>
+      </v-col>
+    </v-row>
+
+    <v-row v-else-if="featuredCourses.length > 0">
       <v-col
         v-for="course in featuredCourses"
         :key="course.id"
@@ -90,6 +91,16 @@ const featuredCourses = [
         lg="3"
       >
         <CourseCard :course="course" />
+      </v-col>
+    </v-row>
+
+    <v-row v-else class="mt-8">
+      <v-col cols="12" class="text-center">
+        <v-icon icon="mdi-book-off" size="100" color="grey"></v-icon>
+        <p class="text-h5 mt-4">No courses available yet</p>
+        <p class="text-body-1 text-grey">
+          Check back later for new courses!
+        </p>
       </v-col>
     </v-row>
 
