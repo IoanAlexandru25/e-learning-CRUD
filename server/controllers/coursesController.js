@@ -1,5 +1,6 @@
 const { db } = require('../config/firebase');
 const admin = require('firebase-admin');
+const { validateCourseData, sanitizeCourseData } = require('../utils/validation');
 
 exports.getAllCourses = async (req, res) => {
   try {
@@ -50,21 +51,34 @@ exports.getCourseById = async (req, res) => {
 
 exports.createCourse = async (req, res) => {
   try {
-    const courseData = req.body;
-
-    if (!courseData.title || !courseData.price || !courseData.instructor) {
-      return res.status(400).json({ error: 'Missing required fields: title, price, instructor' });
+    const validation = validateCourseData(req.body, false);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid course data',
+        details: validation.errors
+      });
     }
+
+    const courseData = sanitizeCourseData(req.body);
 
     const slug = courseData.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
+    const instructor = {
+      id: req.user.uid,
+      name: req.user.name,
+      email: req.user.email,
+      avatar: courseData.instructor?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.user.name)}&background=random`,
+      bio: courseData.instructor?.bio || ''
+    };
+
     const newCourse = {
       title: courseData.title,
       slug: slug,
-      price: parseFloat(courseData.price),
+      price: courseData.price,
       description: courseData.description || '',
 
       category: courseData.category || {
@@ -74,7 +88,7 @@ exports.createCourse = async (req, res) => {
         tags: []
       },
 
-      instructor: courseData.instructor,
+      instructor: instructor,
 
       syllabus: courseData.syllabus || [],
 
@@ -91,12 +105,12 @@ exports.createCourse = async (req, res) => {
       metadata: {
         createdAt: admin.firestore.Timestamp.now(),
         updatedAt: admin.firestore.Timestamp.now(),
-        createdBy: courseData.instructor.id,
+        createdBy: req.user.uid,
         views: 0,
         enrollments: 0,
         avgRating: 0,
-        isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true,
-        featured: courseData.featured || false
+        isPublished: courseData.metadata?.isPublished !== undefined ? courseData.metadata.isPublished : true,
+        featured: courseData.metadata?.featured || false
       }
     };
 
@@ -105,59 +119,104 @@ exports.createCourse = async (req, res) => {
 
     res.status(201).json({
       id: docRef.id,
-      ...createdCourse.data()
+      ...createdCourse.data(),
+      message: 'Course created successfully'
     });
   } catch (error) {
     console.error('Error creating course:', error);
-    res.status(500).json({ error: 'Failed to create course', message: error.message });
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to create course',
+      details: error.message
+    });
   }
 };
 
 exports.updateCourse = async (req, res) => {
   try {
-    const courseRef = db.collection('courses').doc(req.params.id);
-    const doc = await courseRef.get();
-
-    if (!doc.exists) {
-      return res.status(404).json({ error: 'Course not found' });
+    const validation = validateCourseData(req.body, true);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid course data',
+        details: validation.errors
+      });
     }
 
-    const updateData = { ...req.body };
+    const updateData = sanitizeCourseData(req.body);
 
-    updateData.metadata = {
-      ...doc.data().metadata,
-      ...updateData.metadata,
-      updatedAt: admin.firestore.Timestamp.now()
-    };
+    if (updateData.title) {
+      updateData.slug = updateData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
 
+    delete updateData.instructor;
+    if (updateData.metadata) {
+      delete updateData.metadata.createdAt;
+      delete updateData.metadata.createdBy;
+      delete updateData.metadata.views;
+      delete updateData.metadata.enrollments;
+      delete updateData.metadata.avgRating;
+    }
+
+    updateData['metadata.updatedAt'] = admin.firestore.Timestamp.now();
+
+    if (req.body.metadata) {
+      if (req.body.metadata.isPublished !== undefined) {
+        updateData['metadata.isPublished'] = req.body.metadata.isPublished;
+      }
+      if (req.body.metadata.featured !== undefined) {
+        updateData['metadata.featured'] = req.body.metadata.featured;
+      }
+    }
+
+    const courseRef = db.collection('courses').doc(req.params.id);
     await courseRef.update(updateData);
     const updatedDoc = await courseRef.get();
 
     res.json({
       id: updatedDoc.id,
-      ...updatedDoc.data()
+      ...updatedDoc.data(),
+      message: 'Course updated successfully'
     });
   } catch (error) {
     console.error('Error updating course:', error);
-    res.status(500).json({ error: 'Failed to update course', message: error.message });
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to update course',
+      details: error.message
+    });
   }
 };
 
 exports.deleteCourse = async (req, res) => {
   try {
     const courseRef = db.collection('courses').doc(req.params.id);
-    const doc = await courseRef.get();
 
-    if (!doc.exists) {
-      return res.status(404).json({ error: 'Course not found' });
+    const courseData = req.course;
+    if (courseData.metadata?.enrollments > 0) {
+      return res.status(400).json({
+        error: 'Cannot Delete',
+        message: 'Cannot delete course with active enrollments. Please unpublish instead.',
+        enrollments: courseData.metadata.enrollments
+      });
     }
 
     await courseRef.delete();
 
-    res.json({ message: 'Course deleted successfully', id: req.params.id });
+    res.json({
+      message: 'Course deleted successfully',
+      id: req.params.id
+    });
   } catch (error) {
     console.error('Error deleting course:', error);
-    res.status(500).json({ error: 'Failed to delete course', message: error.message });
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to delete course',
+      details: error.message
+    });
   }
 };
 
