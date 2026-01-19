@@ -5,6 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { db } = require('./config/firebase');
+const coursesRoutes = require('./routes/courses');
+const enrollmentsRoutes = require('./routes/enrollments');
 
 const app = express();
 
@@ -12,6 +14,9 @@ app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}))
+
+app.use('/api/courses', coursesRoutes);
+app.use('/api/enrollments', enrollmentsRoutes);
 
 app.get('/', (req, res) => {
     res.json({message: 'The server is working'})

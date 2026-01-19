@@ -1,5 +1,5 @@
 <script setup>
-import ProductCard from '../components/ProductCard.vue'
+import CourseCard from '../components/CourseCard.vue'
 
 const featuredCourses = [
   {
@@ -8,8 +8,9 @@ const featuredCourses = [
     price: 89.99,
     description: 'Master Vue 3 from basics to advanced concepts including Composition API, Pinia, and Vue Router.',
     image: 'https://picsum.photos/400/250?random=1',
-    instructor: 'Sarah Johnson',
-    rating: 4.8
+    instructor: { name: 'Sarah Johnson' },
+    metadata: { avgRating: 4.8, enrollments: 340, views: 1250 },
+    specifications: { level: 'Intermediate', duration: '8 hours' }
   },
   {
     id: 2,
@@ -17,8 +18,9 @@ const featuredCourses = [
     price: 79.99,
     description: 'Deep dive into modern JavaScript features, async programming, and best practices.',
     image: 'https://picsum.photos/400/250?random=2',
-    instructor: 'Michael Chen',
-    rating: 4.7
+    instructor: { name: 'Michael Chen' },
+    metadata: { avgRating: 4.7, enrollments: 280, views: 950 },
+    specifications: { level: 'Advanced', duration: '6 hours' }
   },
   {
     id: 3,
@@ -26,8 +28,9 @@ const featuredCourses = [
     price: 129.99,
     description: 'Build complete web applications with Node.js, Express, MongoDB, and Vue.js.',
     image: 'https://picsum.photos/400/250?random=3',
-    instructor: 'Emily Davis',
-    rating: 4.9
+    instructor: { name: 'Emily Davis' },
+    metadata: { avgRating: 4.9, enrollments: 520, views: 1800, featured: true },
+    specifications: { level: 'Intermediate', duration: '12 hours' }
   },
   {
     id: 4,
@@ -35,19 +38,15 @@ const featuredCourses = [
     price: 69.99,
     description: 'Learn to build real-time applications with Firebase Authentication and Firestore database.',
     image: 'https://picsum.photos/400/250?random=4',
-    instructor: 'David Martinez',
-    rating: 4.6
+    instructor: { name: 'David Martinez' },
+    metadata: { avgRating: 4.6, enrollments: 190, views: 780 },
+    specifications: { level: 'Beginner', duration: '5 hours' }
   }
 ]
-
-const handleViewDetails = (course) => {
-  console.log('View details for:', course)
-}
 </script>
 
 <template>
   <v-container fluid>
-    <!-- Hero Section -->
     <v-row class="mb-8">
       <v-col cols="12">
         <v-card color="primary" variant="elevated" class="pa-8">
@@ -71,7 +70,6 @@ const handleViewDetails = (course) => {
       </v-col>
     </v-row>
 
-    <!-- Featured Courses Section -->
     <v-row class="mb-4">
       <v-col cols="12">
         <h2 class="text-h4 font-weight-bold mb-2">
@@ -82,7 +80,6 @@ const handleViewDetails = (course) => {
       </v-col>
     </v-row>
 
-    <!-- Course Cards Grid -->
     <v-row>
       <v-col
         v-for="course in featuredCourses"
@@ -92,19 +89,10 @@ const handleViewDetails = (course) => {
         md="4"
         lg="3"
       >
-        <ProductCard
-          :title="course.title"
-          :price="course.price"
-          :description="course.description"
-          :image="course.image"
-          :instructor="course.instructor"
-          :rating="course.rating"
-          @view-details="handleViewDetails(course)"
-        />
+        <CourseCard :course="course" />
       </v-col>
     </v-row>
 
-    <!-- Stats Section -->
     <v-row class="mt-12 mb-8">
       <v-col cols="12">
         <v-card color="grey-lighten-4" variant="flat">
