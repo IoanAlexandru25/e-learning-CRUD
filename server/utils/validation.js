@@ -34,12 +34,12 @@ const validateCourseData = (courseData, isUpdate = false) => {
     }
   }
 
-  if (courseData.category !== undefined) {
-    if (typeof courseData.category !== 'object' || courseData.category === null) {
+  if (courseData.category !== undefined && courseData.category !== null) {
+    if (typeof courseData.category !== 'object') {
       errors.push('Category must be an object');
     } else {
-      if (!courseData.category.name || typeof courseData.category.name !== 'string') {
-        errors.push('Category name is required and must be a string');
+      if (courseData.category.name && typeof courseData.category.name !== 'string') {
+        errors.push('Category name must be a string');
       }
       if (courseData.category.tags && !Array.isArray(courseData.category.tags)) {
         errors.push('Category tags must be an array');

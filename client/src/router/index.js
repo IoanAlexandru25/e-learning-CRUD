@@ -39,6 +39,24 @@ const router = createRouter({
       name: 'my-courses',
       component: () => import('../views/MyCoursesView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/instructor/courses',
+      name: 'instructor-courses',
+      component: () => import('../views/InstructorCoursesView.vue'),
+      meta: { requiresAuth: true, requiresInstructor: true }
+    },
+    {
+      path: '/courses/create',
+      name: 'create-course',
+      component: () => import('../views/CreateCourseView.vue'),
+      meta: { requiresAuth: true, requiresInstructor: true }
+    },
+    {
+      path: '/courses/edit/:id',
+      name: 'edit-course',
+      component: () => import('../views/EditCourseView.vue'),
+      meta: { requiresAuth: true, requiresInstructor: true }
     }
   ]
 })
@@ -50,6 +68,9 @@ router.beforeEach((to, from, next) => {
     next({ name: 'login', query: { redirect: to.fullPath } })
   }
   else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    next({ name: 'home' })
+  }
+  else if (to.meta.requiresInstructor && !authStore.isInstructor) {
     next({ name: 'home' })
   }
   else {

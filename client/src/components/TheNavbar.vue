@@ -20,7 +20,7 @@ const handleLogout = async () => {
 <template>
   <v-app-bar color="primary" elevation="2" app>
     <v-app-bar-title class="text-h5 font-weight-bold" style="cursor: pointer" @click="navigateTo('/')">
-      <v-icon icon="mdi-school" class="mr-2"></v-icon>
+      <v-icon icon="mdi-schfool" class="mr-2"></v-icon>
       E-Learning Platform
     </v-app-bar-title>
 
@@ -36,7 +36,6 @@ const handleLogout = async () => {
       Courses
     </v-btn>
 
-    <!-- Not authenticated -->
     <template v-if="!authStore.isAuthenticated">
       <v-btn @click="navigateTo('/register')" variant="text">
         <v-icon icon="mdi-account-plus" class="mr-1"></v-icon>
@@ -51,6 +50,11 @@ const handleLogout = async () => {
     <template v-else>
       <v-btn v-if="authStore.isStudent" @click="navigateTo('/my-courses')" variant="text">
         <v-icon icon="mdi-book-multiple" class="mr-1"></v-icon>
+        My Courses
+      </v-btn>
+
+      <v-btn v-if="authStore.isInstructor" @click="navigateTo('/instructor/courses')" variant="text">
+        <v-icon icon="mdi-book-edit" class="mr-1"></v-icon>
         My Courses
       </v-btn>
 
@@ -95,7 +99,7 @@ const handleLogout = async () => {
             <v-list-item-title>My Courses</v-list-item-title>
           </v-list-item>
 
-          <v-list-item v-if="authStore.isInstructor" @click="navigateTo('/my-courses')">
+          <v-list-item v-if="authStore.isInstructor" @click="navigateTo('/instructor/courses')">
             <template v-slot:prepend>
               <v-icon icon="mdi-book-edit"></v-icon>
             </template>

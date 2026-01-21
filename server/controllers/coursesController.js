@@ -53,6 +53,8 @@ exports.createCourse = async (req, res) => {
   try {
     const validation = validateCourseData(req.body, false);
     if (!validation.isValid) {
+      console.error('Validation errors:', validation.errors);
+      console.error('Request body:', JSON.stringify(req.body, null, 2));
       return res.status(400).json({
         error: 'Validation Error',
         message: 'Invalid course data',
@@ -84,7 +86,6 @@ exports.createCourse = async (req, res) => {
       category: courseData.category || {
         id: 'cat_general',
         name: 'General',
-        subcategory: 'Uncategorized',
         tags: []
       },
 

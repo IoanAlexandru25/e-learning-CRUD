@@ -4,14 +4,11 @@ const { db } = require('../config/firebase');
 const admin = require('firebase-admin');
 
 const categories = [
-  { id: 'cat_development', name: 'Web Development', subcategory: 'Frontend Frameworks', tags: ['javascript', 'vue', 'react', 'angular'] },
-  { id: 'cat_backend', name: 'Backend Development', subcategory: 'Server-side Programming', tags: ['node', 'python', 'java', 'php'] },
-  { id: 'cat_mobile', name: 'Mobile Development', subcategory: 'iOS & Android', tags: ['swift', 'kotlin', 'react-native', 'flutter'] },
-  { id: 'cat_data', name: 'Data Science', subcategory: 'Analytics & ML', tags: ['python', 'machine-learning', 'ai', 'analytics'] },
-  { id: 'cat_design', name: 'Design', subcategory: 'UI/UX Design', tags: ['figma', 'photoshop', 'ux', 'ui'] },
-  { id: 'cat_business', name: 'Business', subcategory: 'Marketing & Sales', tags: ['marketing', 'sales', 'seo', 'branding'] },
-  { id: 'cat_cloud', name: 'Cloud Computing', subcategory: 'AWS & Azure', tags: ['aws', 'azure', 'docker', 'kubernetes'] },
-  { id: 'cat_security', name: 'Cybersecurity', subcategory: 'Security & Privacy', tags: ['security', 'pentesting', 'encryption', 'privacy'] }
+  { id: 'cat_development', name: 'Development', tags: ['javascript', 'vue', 'react', 'angular', 'node', 'python'] },
+  { id: 'cat_design', name: 'Design', tags: ['figma', 'photoshop', 'ux', 'ui', 'branding'] },
+  { id: 'cat_business', name: 'Business', tags: ['marketing', 'sales', 'seo', 'strategy', 'entrepreneurship'] },
+  { id: 'cat_marketing', name: 'Marketing', tags: ['digital-marketing', 'seo', 'social-media', 'content', 'ads'] },
+  { id: 'cat_it_software', name: 'IT & Software', tags: ['aws', 'azure', 'docker', 'kubernetes', 'security', 'devops'] }
 ];
 
 const courseTitles = [
@@ -139,7 +136,6 @@ function generateCourse() {
     category: {
       id: category.id,
       name: category.name,
-      subcategory: category.subcategory,
       tags: faker.helpers.arrayElements(category.tags, faker.number.int({ min: 2, max: 4 }))
     },
 
