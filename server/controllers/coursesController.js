@@ -144,33 +144,58 @@ exports.updateCourse = async (req, res) => {
       });
     }
 
-    const updateData = sanitizeCourseData(req.body);
+    const courseData = sanitizeCourseData(req.body);
+    const updateData = {};
 
-    if (updateData.title) {
-      updateData.slug = updateData.title
+    if (courseData.title !== undefined) {
+      updateData.title = courseData.title;
+      updateData.slug = courseData.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
     }
+    if (courseData.price !== undefined) {
+      updateData.price = courseData.price;
+    }
+    if (courseData.description !== undefined) {
+      updateData.description = courseData.description;
+    }
 
-    delete updateData.instructor;
-    if (updateData.metadata) {
-      delete updateData.metadata.createdAt;
-      delete updateData.metadata.createdBy;
-      delete updateData.metadata.views;
-      delete updateData.metadata.enrollments;
-      delete updateData.metadata.avgRating;
+    if (courseData.syllabus !== undefined) {
+      updateData.syllabus = courseData.syllabus;
+    }
+
+    if (courseData.category) {
+      Object.keys(courseData.category).forEach(key => {
+        if (courseData.category[key] !== undefined) {
+          updateData[`category.${key}`] = courseData.category[key];
+        }
+      });
+    }
+    if (courseData.specifications) {
+      Object.keys(courseData.specifications).forEach(key => {
+        if (courseData.specifications[key] !== undefined) {
+          updateData[`specifications.${key}`] = courseData.specifications[key];
+        }
+      });
     }
 
     updateData['metadata.updatedAt'] = admin.firestore.Timestamp.now();
+    if (courseData.metadata) {
+      if (courseData.metadata.isPublished !== undefined) {
+        updateData['metadata.isPublished'] = courseData.metadata.isPublished;
+      }
+      if (courseData.metadata.featured !== undefined) {
+        updateData['metadata.featured'] = courseData.metadata.featured;
+      }
+    }
 
-    if (req.body.metadata) {
-      if (req.body.metadata.isPublished !== undefined) {
-        updateData['metadata.isPublished'] = req.body.metadata.isPublished;
-      }
-      if (req.body.metadata.featured !== undefined) {
-        updateData['metadata.featured'] = req.body.metadata.featured;
-      }
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'No fields to update.',
+        details: []
+      });
     }
 
     const courseRef = db.collection('courses').doc(req.params.id);

@@ -8,6 +8,7 @@ import {
   updateProfile
 } from 'firebase/auth'
 import { auth } from '../config/firebase'
+import { handleFirebaseAuthError } from '../utils/firebaseErrors'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -68,9 +69,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true, user: user.value }
     } catch (err) {
-      error.value = err.message
+      const { message } = handleFirebaseAuthError(err)
+      error.value = message
       console.error('Registration error:', err)
-      return { success: false, error: err.message }
+      return { success: false, error: message }
     } finally {
       loading.value = false
     }
@@ -95,9 +97,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true, user: user.value }
     } catch (err) {
-      error.value = err.message
+      const { message } = handleFirebaseAuthError(err)
+      error.value = message
       console.error('Login error:', err)
-      return { success: false, error: err.message }
+      return { success: false, error: message }
     } finally {
       loading.value = false
     }
@@ -110,9 +113,10 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       return { success: true }
     } catch (err) {
-      error.value = err.message
+      const { message } = handleFirebaseAuthError(err)
+      error.value = message
       console.error('Logout error:', err)
-      return { success: false, error: err.message }
+      return { success: false, error: message }
     }
   }
 

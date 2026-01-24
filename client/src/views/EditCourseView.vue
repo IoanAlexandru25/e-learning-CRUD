@@ -20,13 +20,28 @@
           {{ error }}
         </v-alert>
 
-        <CourseForm
-          v-else-if="course"
-          :course="course"
-          :loading="coursesStore.loading"
-          @submit="handleUpdate"
-          @cancel="router.back()"
-        />
+        <template v-else-if="course">
+          <v-alert
+            v-if="validationErrors.length > 0"
+            type="error"
+            variant="tonal"
+            closable
+            class="mb-4"
+            @click:close="validationErrors = []"
+          >
+            <div class="text-subtitle-2 mb-2">Please fix the following errors:</div>
+            <ul class="pl-4">
+              <li v-for="(error, index) in validationErrors" :key="index">{{ error }}</li>
+            </ul>
+          </v-alert>
+
+          <CourseForm
+            :course="course"
+            :loading="coursesStore.loading"
+            @submit="handleUpdate"
+            @cancel="router.back()"
+          />
+        </template>
       </v-col>
     </v-row>
 
@@ -61,6 +76,8 @@ const snackbar = ref({
   color: 'success'
 })
 
+const validationErrors = ref([])
+
 onMounted(async () => {
   if (!authStore.isInstructor) {
     router.push('/')
@@ -83,6 +100,8 @@ onMounted(async () => {
 })
 
 const handleUpdate = async (courseData) => {
+  validationErrors.value = []
+
   const result = await coursesStore.updateCourse(route.params.id, courseData)
 
   if (result.success) {
@@ -95,10 +114,19 @@ const handleUpdate = async (courseData) => {
       router.push('/instructor/courses')
     }, 1500)
   } else {
-    snackbar.value = {
-      show: true,
-      message: result.error || 'Failed to update course',
-      color: 'error'
+    if (result.details && Array.isArray(result.details)) {
+      validationErrors.value = result.details
+      snackbar.value = {
+        show: true,
+        message: 'Please fix validation errors',
+        color: 'error'
+      }
+    } else {
+      snackbar.value = {
+        show: true,
+        message: result.error || 'Failed to update course',
+        color: 'error'
+      }
     }
   }
 }

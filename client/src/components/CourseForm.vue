@@ -20,12 +20,15 @@
 
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="formData.price"
+                v-model="formData.price"
                 label="Price*"
                 type="number"
                 prefix="$"
-                :rules="[rules.required, rules.minValue(0), rules.maxValue(10000)]"
+                step="0.01"
+                :rules="[rules.price]"
                 variant="outlined"
+                hint="Maximum $10,000 with 2 decimal places"
+                persistent-hint
               />
             </v-col>
 
@@ -77,7 +80,8 @@
                 v-model.number="durationValue"
                 label="Duration"
                 type="number"
-                :rules="[rules.minValue(0)]"
+                min="0"
+                :rules="[rules.required, rules.positiveNumber]"
                 variant="outlined"
               />
             </v-col>
@@ -379,7 +383,23 @@ const rules = {
   minLength: (min) => v => !v || v.length >= min || `Minimum ${min} characters`,
   maxLength: (max) => v => !v || v.length <= max || `Maximum ${max} characters`,
   minValue: (min) => v => v >= min || `Minimum value is ${min}`,
-  maxValue: (max) => v => v <= max || `Maximum value is ${max}`
+  maxValue: (max) => v => v <= max || `Maximum value is ${max}`,
+  price: v => {
+    if (v === '' || v === null || v === undefined) return 'Price is required'
+    const num = parseFloat(v)
+    if (isNaN(num)) return 'Price must be a valid number'
+    if (num < 0) return 'Price cannot be negative'
+    if (num > 10000) return 'Price cannot exceed $10,000'
+    if (!/^\d+(\.\d{1,2})?$/.test(v.toString())) return 'Price can have maximum 2 decimal places'
+    return true
+  },
+  positiveNumber: v => {
+    if (v === '' || v === null || v === undefined) return true
+    const num = parseFloat(v)
+    if (isNaN(num)) return 'Must be a valid number'
+    if (num < 0) return 'Cannot be negative'
+    return true
+  }
 }
 
 const addModule = () => {

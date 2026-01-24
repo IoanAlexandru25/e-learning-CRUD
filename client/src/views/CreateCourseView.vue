@@ -12,6 +12,20 @@
           </v-btn>
         </div>
 
+        <v-alert
+          v-if="validationErrors.length > 0"
+          type="error"
+          variant="tonal"
+          closable
+          class="mb-4"
+          @click:close="validationErrors = []"
+        >
+          <div class="text-subtitle-2 mb-2">Please fix the following errors:</div>
+          <ul class="pl-4">
+            <li v-for="(error, index) in validationErrors" :key="index">{{ error }}</li>
+          </ul>
+        </v-alert>
+
         <CourseForm
           :loading="coursesStore.loading"
           @submit="handleCreate"
@@ -46,6 +60,8 @@ const snackbar = ref({
   color: 'success'
 })
 
+const validationErrors = ref([])
+
 onMounted(() => {
   if (!authStore.isInstructor) {
     router.push('/')
@@ -53,6 +69,8 @@ onMounted(() => {
 })
 
 const handleCreate = async (courseData) => {
+  validationErrors.value = []
+
   const result = await coursesStore.createCourse(courseData)
 
   if (result.success) {
@@ -65,10 +83,19 @@ const handleCreate = async (courseData) => {
       router.push('/instructor/courses')
     }, 1500)
   } else {
-    snackbar.value = {
-      show: true,
-      message: result.error || 'Failed to create course',
-      color: 'error'
+    if (result.details && Array.isArray(result.details)) {
+      validationErrors.value = result.details
+      snackbar.value = {
+        show: true,
+        message: 'Please fix validation errors',
+        color: 'error'
+      }
+    } else {
+      snackbar.value = {
+        show: true,
+        message: result.error || 'Failed to create course',
+        color: 'error'
+      }
     }
   }
 }

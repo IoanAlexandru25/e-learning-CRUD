@@ -21,7 +21,15 @@ const validateCourseData = (courseData, isUpdate = false) => {
       } else if (price < 0) {
         errors.push('Price cannot be negative');
       } else if (price > 10000) {
-        errors.push('Price cannot exceed 10000');
+        errors.push('Price cannot exceed $10,000');
+      } else {
+        const priceStr = price.toString();
+        if (priceStr.includes('.')) {
+          const decimals = priceStr.split('.')[1];
+          if (decimals && decimals.length > 2) {
+            errors.push('Price can have maximum 2 decimal places');
+          }
+        }
       }
     }
   }
@@ -88,7 +96,7 @@ const validateCourseData = (courseData, isUpdate = false) => {
 const sanitizeCourseData = (courseData) => {
   const sanitized = {};
 
-  if (courseData.title) {
+  if (courseData.title !== undefined) {
     sanitized.title = courseData.title.trim();
   }
 
@@ -96,27 +104,23 @@ const sanitizeCourseData = (courseData) => {
     sanitized.price = parseFloat(courseData.price);
   }
 
-  if (courseData.description) {
+  if (courseData.description !== undefined) {
     sanitized.description = courseData.description.trim();
   }
 
-  if (courseData.category) {
+  if (courseData.category !== undefined) {
     sanitized.category = courseData.category;
   }
 
-  if (courseData.instructor) {
-    sanitized.instructor = courseData.instructor;
-  }
-
-  if (courseData.syllabus) {
+  if (courseData.syllabus !== undefined) {
     sanitized.syllabus = courseData.syllabus;
   }
 
-  if (courseData.specifications) {
+  if (courseData.specifications !== undefined) {
     sanitized.specifications = courseData.specifications;
   }
 
-  if (courseData.metadata) {
+  if (courseData.metadata !== undefined) {
     sanitized.metadata = courseData.metadata;
   }
 

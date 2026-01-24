@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from './auth'
 
 const API_URL = 'http://localhost:3000/api'
@@ -10,8 +10,48 @@ export const useCoursesStore = defineStore('courses', () => {
   const currentCourse = ref(null)
   const loading = ref(false)
   const error = ref(null)
+  const searchQuery = ref('')
+  const selectedCategory = ref('All')
+  const selectedLevel = ref('All')
+  const sortBy = ref('date-desc')
 
   const authStore = useAuthStore()
+
+  const filteredAndSortedCourses = computed(() => {
+    let result = courses.value
+
+    // 1. Filtering
+    if (searchQuery.value) {
+      result = result.filter(course =>
+        course.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+      )
+    }
+
+    if (selectedCategory.value && selectedCategory.value !== 'All') {
+      result = result.filter(course => course.category?.name === selectedCategory.value)
+    }
+
+    if (selectedLevel.value && selectedLevel.value !== 'All') {
+      result = result.filter(course => course.specifications?.level === selectedLevel.value)
+    }
+    
+    switch (sortBy.value) {
+      case 'price-asc':
+        result.sort((a, b) => a.price - b.price)
+        break
+      case 'price-desc':
+        result.sort((a, b) => b.price - a.price)
+        break
+      case 'date-asc':
+        result.sort((a, b) => new Date(a.metadata.createdAt.seconds * 1000) - new Date(b.metadata.createdAt.seconds * 1000))
+        break
+      case 'date-desc':
+        result.sort((a, b) => new Date(b.metadata.createdAt.seconds * 1000) - new Date(a.metadata.createdAt.seconds * 1000))
+        break
+    }
+
+    return result
+  })
 
   const fetchCourses = async () => {
     loading.value = true
@@ -70,7 +110,6 @@ export const useCoursesStore = defineStore('courses', () => {
     error.value = null
     try {
       const token = await authStore.getAuthToken()
-      console.log('Creating course with data:', courseData)
       const response = await fetch(`${API_URL}/courses`, {
         method: 'POST',
         headers: {
@@ -81,19 +120,20 @@ export const useCoursesStore = defineStore('courses', () => {
       })
 
       const data = await response.json()
-      console.log('Server response:', data)
 
       if (!response.ok) {
-        console.error('Validation errors:', data.details)
-        throw new Error(data.message || 'Failed to create course')
+        return {
+          success: false,
+          error: data.message || 'Failed to create course',
+          details: data.details || []
+        }
       }
 
       await fetchMyCourses()
       return { success: true, course: data }
     } catch (err) {
       error.value = err.message
-      console.error('Error creating course:', err)
-      return { success: false, error: err.message }
+      return { success: false, error: err.message, details: [] }
     } finally {
       loading.value = false
     }
@@ -116,15 +156,18 @@ export const useCoursesStore = defineStore('courses', () => {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to update course')
+        return {
+          success: false,
+          error: data.message || 'Failed to update course',
+          details: data.details || []
+        }
       }
 
       await fetchMyCourses()
       return { success: true, course: data }
     } catch (err) {
       error.value = err.message
-      console.error('Error updating course:', err)
-      return { success: false, error: err.message }
+      return { success: false, error: err.message, details: [] }
     } finally {
       loading.value = false
     }
@@ -152,7 +195,6 @@ export const useCoursesStore = defineStore('courses', () => {
       return { success: true, message: data.message }
     } catch (err) {
       error.value = err.message
-      console.error('Error deleting course:', err)
       return { success: false, error: err.message }
     } finally {
       loading.value = false
@@ -165,6 +207,11 @@ export const useCoursesStore = defineStore('courses', () => {
     currentCourse,
     loading,
     error,
+    searchQuery,
+    selectedCategory,
+    selectedLevel,
+    sortBy,
+    filteredAndSortedCourses,
     fetchCourses,
     fetchCourseById,
     fetchMyCourses,
