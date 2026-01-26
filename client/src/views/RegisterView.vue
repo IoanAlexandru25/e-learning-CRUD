@@ -144,7 +144,6 @@ const goToLogin = () => {
                     >
                       <template v-slot:label>
                         <div class="d-flex align-center">
-                          <v-icon icon="mdi-school" class="mr-2"></v-icon>
                           <div>
                             <div class="font-weight-bold">Student</div>
                             <div class="text-caption">Enroll and learn from courses</div>
@@ -160,7 +159,6 @@ const goToLogin = () => {
                     >
                       <template v-slot:label>
                         <div class="d-flex align-center">
-                          <v-icon icon="mdi-teach" class="mr-2"></v-icon>
                           <div>
                             <div class="font-weight-bold">Instructor</div>
                             <div class="text-caption">Create and sell courses</div>

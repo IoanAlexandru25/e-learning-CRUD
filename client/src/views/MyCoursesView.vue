@@ -1,38 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useEnrollmentsStore } from '@/stores/enrollments'
 
-const authStore = useAuthStore()
-const enrollments = ref([])
-const loading = ref(false)
+const enrollmentsStore = useEnrollmentsStore()
+const { myEnrollments, loading, error } = storeToRefs(enrollmentsStore)
 
 onMounted(async () => {
-  if (authStore.user) {
-    await fetchMyEnrollments()
+  if (myEnrollments.value.length === 0) {
+    await enrollmentsStore.fetchMyEnrollments()
   }
 })
-
-const fetchMyEnrollments = async () => {
-  loading.value = true
-  try {
-    const token = await authStore.getAuthToken()
-    const response = await fetch(
-      `http://localhost:3000/api/enrollments/student/${authStore.user.uid}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    )
-    if (response.ok) {
-      enrollments.value = await response.json()
-    }
-  } catch (error) {
-    console.error('Error fetching enrollments:', error)
-  } finally {
-    loading.value = false
-  }
-}
 </script>
 
 <template>
@@ -50,12 +28,26 @@ const fetchMyEnrollments = async () => {
     </v-row>
 
     <v-row v-if="loading">
-      <v-col cols="12" class="text-center">
+      <v-col cols="12" class="text-center pa-8">
         <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+        <p class="text-h6 mt-4">Loading your courses...</p>
       </v-col>
     </v-row>
 
-    <v-row v-else-if="enrollments.length === 0">
+    <v-row v-else-if="error">
+       <v-col cols="12">
+        <v-alert
+          type="error"
+          variant="tonal"
+          prominent
+        >
+          <v-alert-title>Error loading your courses</v-alert-title>
+          {{ error }}
+        </v-alert>
+      </v-col>
+    </v-row>
+
+    <v-row v-else-if="myEnrollments.length === 0">
       <v-col cols="12" class="text-center">
         <v-icon icon="mdi-book-off-outline" size="100" color="grey"></v-icon>
         <p class="text-h5 mt-4">No courses enrolled yet</p>
@@ -66,7 +58,7 @@ const fetchMyEnrollments = async () => {
     </v-row>
 
     <v-row v-else>
-      <v-col v-for="enrollment in enrollments" :key="enrollment.id" cols="12" md="6">
+      <v-col v-for="enrollment in myEnrollments" :key="enrollment.id" cols="12" md="6">
         <v-card>
           <v-card-title>{{ enrollment.courseName }}</v-card-title>
           <v-card-subtitle>by {{ enrollment.instructorName }}</v-card-subtitle>
@@ -76,12 +68,13 @@ const fetchMyEnrollments = async () => {
               color="primary"
               height="20"
               class="mb-2"
+              rounded
             >
-              <strong>{{ enrollment.progress }}%</strong>
+              <strong class="text-white">{{ Math.round(enrollment.progress) }}%</strong>
             </v-progress-linear>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" variant="elevated">Continue Learning</v-btn>
+            <v-btn color="primary" variant="elevated" :to="`/courses/${enrollment.courseId}`">Continue Learning</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>

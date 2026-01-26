@@ -20,7 +20,6 @@ export const useCoursesStore = defineStore('courses', () => {
   const filteredAndSortedCourses = computed(() => {
     let result = courses.value
 
-    // 1. Filtering
     if (searchQuery.value) {
       result = result.filter(course =>
         course.title.toLowerCase().includes(searchQuery.value.toLowerCase())

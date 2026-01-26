@@ -2,11 +2,13 @@ const { db } = require('../config/firebase');
 const admin = require('firebase-admin');
 
 exports.enrollInCourse = async (req, res) => {
+  console.log('Enrollment request body:', req.body);
   try {
-    const { studentId, courseId } = req.body;
+    const { courseId } = req.body;
+    const studentId = req.user.uid; 
 
-    if (!studentId || !courseId) {
-      return res.status(400).json({ error: 'Missing required fields: studentId, courseId' });
+    if (!courseId) {
+      return res.status(400).json({ error: 'Missing required field: courseId' });
     }
 
     const courseRef = db.collection('courses').doc(courseId);
@@ -29,7 +31,7 @@ exports.enrollInCourse = async (req, res) => {
       studentId,
       courseId,
       courseName: courseDoc.data().title,
-      instructorName: courseDoc.data().instructor.name,
+      instructorName: courseDoc.data().instructor?.name || 'N/A',
       enrolledAt: admin.firestore.Timestamp.now(),
       progress: 0,
       completedLessons: [],
@@ -57,10 +59,10 @@ exports.enrollInCourse = async (req, res) => {
 
 exports.getStudentEnrollments = async (req, res) => {
   try {
+    const studentId = req.user.uid;
     const enrollmentsRef = db.collection('enrollments');
     const snapshot = await enrollmentsRef
-      .where('studentId', '==', req.params.studentId)
-      .orderBy('enrolledAt', 'desc')
+      .where('studentId', '==', studentId)
       .get();
 
     if (snapshot.empty) {

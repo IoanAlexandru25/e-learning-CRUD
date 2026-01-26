@@ -243,16 +243,6 @@
                 </v-expansion-panel>
               </v-expansion-panels>
             </v-col>
-
-            <v-col cols="12" v-if="isEdit">
-              <v-divider class="my-4" />
-              <v-switch
-                v-model="formData.metadata.isPublished"
-                label="Published"
-                color="primary"
-                hide-details
-              />
-            </v-col>
           </v-row>
         </v-container>
       </v-card-text>
@@ -321,10 +311,7 @@ const defaultFormData = {
     subtitles: ['English'],
     requirements: []
   },
-  syllabus: [],
-  metadata: {
-    isPublished: true
-  }
+  syllabus: []
 }
 
 const formData = ref({ ...defaultFormData })
@@ -369,10 +356,7 @@ watch(() => props.course, (newCourse) => {
             }
           })
         }
-      }),
-      metadata: {
-        isPublished: newCourse.metadata?.isPublished ?? true
-      }
+      })
     }
     isEdit.value = true
   }

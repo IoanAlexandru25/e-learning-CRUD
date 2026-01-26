@@ -52,6 +52,7 @@ const fetchFeaturedCourses = async () => {
               color="accent"
               variant="elevated"
               prepend-icon="mdi-rocket-launch"
+              to="/courses"
             >
               Start Learning Today
             </v-btn>

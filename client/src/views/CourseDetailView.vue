@@ -1,17 +1,32 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useEnrollmentsStore } from '@/stores/enrollments'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
+const enrollmentsStore = useEnrollmentsStore()
 
 const course = ref(null)
-const loading = ref(false)
+const loading = ref(true)
 const error = ref(null)
 const enrollmentDialog = ref(false)
 
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'success',
+  timeout: 3000
+})
+
 onMounted(async () => {
   await fetchCourse()
+  if (authStore.isAuthenticated) {
+    await enrollmentsStore.fetchMyEnrollments()
+  }
+  loading.value = false
 })
 
 const fetchCourse = async () => {
@@ -27,8 +42,6 @@ const fetchCourse = async () => {
   } catch (err) {
     error.value = err.message
     console.error('Error fetching course:', err)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -36,17 +49,45 @@ const courseImage = computed(() => {
   return course.value?.image || `https://picsum.photos/1200/400?random=${course.value?.id}`
 })
 
+const isCourseInstructor = computed(() => {
+  return authStore.isAuthenticated && authStore.user.uid === course.value?.instructor?.id
+})
+
+const isAlreadyEnrolled = computed(() => {
+  if (!authStore.isAuthenticated || !course.value) return false
+  return enrollmentsStore.isEnrolled(course.value.id)
+})
+
 const handleEnroll = () => {
-  // TODO: Implement enrollment logic in Commit 6 (with authentication)
+  if (!authStore.isAuthenticated) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
   enrollmentDialog.value = true
 }
 
 const confirmEnrollment = async () => {
-  // TODO: Call API to enroll student
-  console.log('Enrolling in course:', course.value.id)
+  const result = await enrollmentsStore.enrollInCourse(course.value.id)
   enrollmentDialog.value = false
 
-  alert('Enrollment feature will be implemented with authentication in the next commit!')
+  if (result.success) {
+    snackbar.value = {
+      show: true,
+      message: 'Enrollment successful! Redirecting...',
+      color: 'success',
+      timeout: 2000
+    }
+    setTimeout(() => {
+      router.push({ name: 'my-courses' })
+    }, 2000)
+  } else {
+    snackbar.value = {
+      show: true,
+      message: result.error || 'An unexpected error occurred.',
+      color: 'error',
+      timeout: 4000
+    }
+  }
 }
 
 const goBack = () => {
@@ -189,13 +230,25 @@ const goBack = () => {
                   ${{ course.price?.toFixed(2) }}
                 </div>
                 <v-btn
+                  v-if="!isCourseInstructor"
                   color="success"
                   size="x-large"
                   block
-                  @click="handleEnroll"
+                  :disabled="isAlreadyEnrolled"
+                  @click="isAlreadyEnrolled ? router.push({name: 'my-courses'}) : handleEnroll()"
                 >
-                  <v-icon icon="mdi-cart-plus" start></v-icon>
-                  Enroll Now
+                  <v-icon v-if="isAlreadyEnrolled" icon="mdi-check-circle" start></v-icon>
+                  {{ isAlreadyEnrolled ? 'Go to Course' : 'Enroll Now' }}
+                </v-btn>
+                <v-btn
+                  v-else
+                  color="secondary"
+                  size="x-large"
+                  block
+                  :to="`/courses/edit/${course.id}`"
+                >
+                  <v-icon icon="mdi-pencil" start></v-icon>
+                  Edit Your Course
                 </v-btn>
                 <v-divider class="my-4"></v-divider>
                 <div class="text-body-2">
@@ -252,16 +305,24 @@ const goBack = () => {
           <p>You are about to enroll in:</p>
           <p class="text-h6 font-weight-bold mt-2">{{ course?.title }}</p>
           <p class="text-body-1 mt-2">Price: ${{ course?.price?.toFixed(2) }}</p>
-          <v-alert type="info" variant="tonal" class="mt-4">
-            Authentication and payment features will be implemented in the next commits.
-          </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn @click="enrollmentDialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="confirmEnrollment">Confirm</v-btn>
+          <v-btn color="primary" @click="confirmEnrollment" :loading="enrollmentsStore.loading">Confirm</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+    >
+      {{ snackbar.message }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="snackbar.show = false">Close</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
